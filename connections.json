@@ -1,0 +1,85 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ip": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-ne-we-hub-config",
+            "location": "northeurope",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16",
+                        "10.254.0.0/16"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('ip')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-fr-we-hub-config",
+            "location": "francecentral",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16",
+                        "10.254.0.0/16"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('ip')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-ne-to-hub",
+            "apiVersion": "2018-12-01",
+            "location": "northeurope",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-ne-we-hub-config')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-ne-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-ne-we-hub-config')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-fr-to-hub",
+            "apiVersion": "2018-12-01",
+            "location": "francecentral",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-fr-we-hub-config')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-fr-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-we-hub-config')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        }
+    ],
+    "outputs": {}
+}

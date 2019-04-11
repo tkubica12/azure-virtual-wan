@@ -1,0 +1,1052 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "virtualWanName": "virtual-wan"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-11-01",
+            "name": "[variables('virtualWanName')]",
+            "type": "Microsoft.Network/virtualWans",
+            "location": "[variables('location')]",
+            "properties": {
+                "disableVpnEncryption": false,
+                "allowBranchToBranchTraffic": true,
+                "allowVnetToVnetTraffic": false,
+                "office365LocalBreakoutCategory": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnSites",
+            "apiVersion": "2018-11-01",
+            "name": "branch-ne",
+            "location": "westeurope",
+            "dependsOn": [
+                "[variables('virtualWanName')]",
+                "branch-ne-ip"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.0.0/24"
+                    ]
+                },
+                "deviceProperties": {
+                    "linkSpeedInMbps": 0
+                },
+                "ipAddress": "[reference('branch-ne-ip').IpAddress]",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "isSecuritySite": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnSites",
+            "apiVersion": "2018-11-01",
+            "name": "branch-fr",
+            "location": "westeurope",
+            "dependsOn": [
+                "[variables('virtualWanName')]",
+                "branch-fr-ip"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.1.0/24"
+                    ]
+                },
+                "deviceProperties": {
+                    "linkSpeedInMbps": 0
+                },
+                "ipAddress": "[reference('branch-fr-ip').IpAddress]",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "isSecuritySite": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualHubs",
+            "apiVersion": "2018-11-01",
+            "name": "westeurope-hub",
+            "dependsOn": [
+                "[variables('virtualWanName')]",
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "we-standalone1-net",
+                "we-standalone2-net"
+            ],
+            "location": "westeurope",
+            "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                // "vpnGateway": {
+                //     "id": "[resourceId('Microsoft.Network/vpnGateways', concat(uniqueString(subscription().Id), '-westeurope-gw'))]"
+                // },
+                "routeTable": {
+                    "routes": [
+                        {
+                            "nextHopIpAddress": "10.0.1.100",
+                            "addressPrefixes": [
+                                "10.0.2.0/24",
+                                "10.0.3.0/24"
+                            ]
+                        }
+                    ]
+                },
+                "virtualNetworkConnections": [
+                    {
+                        "name": "westeurope-hub-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-hub-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-spoke1-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke1-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-spoke2-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke2-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-standalone1-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-standalone1-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-standalone2-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-standalone2-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnGateways",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(uniqueString(subscription().Id), '-westeurope-gw')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "westeurope-hub",
+                "branch-ne",
+                "branch-fr"
+            ],
+            "properties": {
+                "connections": [
+                    {
+                        "name": "connection-branch-ne",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-ne')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    },
+                    {
+                        "name": "connection-branch-fr",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-fr')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    }
+                ],
+                "virtualHub": {
+                    "id": "[resourceId('Microsoft.Network/virtualHubs', 'westeurope-hub')]"
+                },
+                "bgpSettings": {
+                    "asn": 65515
+                },
+                "vpnGatewayScaleUnit": 1
+            }
+        },
+        {
+            "type": "Microsoft.Network/routeTables",
+            "name": "routes",
+            "apiVersion": "2018-07-01",
+            "location": "[variables('location')]",
+            "properties": {
+                "routes": [
+                    {
+                        "name": "defaultPrivateToNva",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/8",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.0.1.100"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "we-hub-net",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-04-01",
+            "comments": "Deploy hub network",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-hub-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/26"
+                        }
+                    },
+                    {
+                        "name": "AzureFirewallSubnet",
+                        "properties": {
+                            "addressPrefix": "10.0.1.64/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "we-spoke1-net",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-04-01",
+            "dependsOn": [
+                "routes"
+            ],
+            "comments": "Deploy spoke1 network",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.2.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-spoke1-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.2.0/26",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', 'routes')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "we-spoke2-net",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-04-01",
+            "dependsOn": [
+                "routes"
+            ],
+            "comments": "Deploy spoke2 network",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.3.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-spoke2-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.3.0/26",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', 'routes')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "we-standalone1-net",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke2-net', 'spoke2-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-hub-net', 'hub-to-spoke1')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-hub-net', 'hub-to-spoke2')]"
+            ],
+            "comments": "Deploy standalone network",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.4.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-standalone1-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.4.0/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "we-standalone2-net",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke2-net', 'spoke2-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-hub-net', 'hub-to-spoke1')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-hub-net', 'hub-to-spoke2')]"
+            ],
+            "comments": "Deploy standalone network",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.5.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-standalone2-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.5.0/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "branch-ne-net",
+            "comments": "Deploy branch network",
+            "location": "northeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.0.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "vm-subnet",
+                        "properties": {
+                            "addressPrefix": "10.254.0.0/25"
+                        }
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "10.254.0.128/25"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "branch-fr-net",
+            "comments": "Deploy branch network",
+            "location": "francecentral",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "vm-subnet",
+                        "properties": {
+                            "addressPrefix": "10.254.1.0/25"
+                        }
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "10.254.1.128/25"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Spoke1 to Hub",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net"
+            ],
+            "name": "we-spoke1-net/spoke1-to-hub",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-hub-net')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Spoke2 to Hub",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]"
+            ],
+            "name": "we-spoke2-net/spoke2-to-hub",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-hub-net')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Hub to Spoke1",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke2-net', 'spoke2-to-hub')]"
+            ],
+            "name": "we-hub-net/hub-to-spoke1",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke1-net')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Hub to Spoke2",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke2-net', 'spoke2-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-hub-net', 'hub-to-spoke1')]"
+            ],
+            "name": "we-hub-net/hub-to-spoke2",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke2-net')]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "branch-ne-ip",
+            "location": "northeurope",
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [],
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "apiVersion": "2018-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "branch-fr-ip",
+            "location": "francecentral",
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [],
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "apiVersion": "2018-12-01",
+            "type": "Microsoft.Network/virtualNetworkGateways",
+            "name": "branch-ne-vpn",
+            "location": "northeurope",
+            "dependsOn": [
+                "branch-ne-net",
+                "branch-ne-ip"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'branch-ne-net', 'GatewaySubnet')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'branch-ne-ip')]"
+                            }
+                        },
+                        "name": "vnetGatewayConfig"
+                    }
+                ],
+                "sku": {
+                    "name": "VpnGw1AZ",
+                    "tier": "VpnGw1AZ"
+                },
+                "gatewayType": "Vpn",
+                "vpnType": "RouteBased",
+                "enableBgp": "false"
+            }
+        },
+        {
+            "apiVersion": "2018-12-01",
+            "type": "Microsoft.Network/virtualNetworkGateways",
+            "name": "branch-fr-vpn",
+            "location": "francecentral",
+            "dependsOn": [
+                "branch-fr-net",
+                "branch-fr-ip"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'branch-fr-net', 'GatewaySubnet')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'branch-fr-ip')]"
+                            }
+                        },
+                        "name": "vnetGatewayConfig"
+                    }
+                ],
+                "sku": {
+                    "name": "VpnGw1AZ",
+                    "tier": "VpnGw1AZ"
+                },
+                "gatewayType": "Vpn",
+                "vpnType": "RouteBased",
+                "enableBgp": "false"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "vm-branch-ne-ip",
+            "apiVersion": "2018-10-01",
+            "location": "northeurope",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "vm-branch-fr-ip",
+            "apiVersion": "2018-10-01",
+            "location": "francecentral",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "vm-spoke1-ip",
+            "apiVersion": "2018-10-01",
+            "location": "westeurope",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "vm-standalone1-ip",
+            "apiVersion": "2018-10-01",
+            "location": "westeurope",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "vm-branch-ne-nic",
+            "location": "northeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', 'vm-branch-ne-ip')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "10.254.0.10",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'vm-branch-ne-ip')]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'branch-ne-net', 'vm-subnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "vm-branch-fr-nic",
+            "location": "francecentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', 'vm-branch-fr-ip')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "10.254.1.10",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'vm-branch-fr-ip')]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'branch-fr-net', 'vm-subnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "vm-spoke1-nic",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', 'vm-spoke1-ip')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "10.0.2.10",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'vm-spoke1-ip')]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'we-spoke1-net', 'we-spoke1-subnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "vm-standalone1-nic",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', 'vm-standalone1-ip')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "10.0.4.10",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'vm-standalone1-ip')]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'we-standalone1-net', 'we-standalone1-subnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "vm-branch-ne",
+            "location": "northeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', 'vm-branch-ne-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ls"
+                },
+                "osProfile": {
+                    "computerName": "vmbranchne",
+                    "adminUsername": "tomas",
+                    "adminPassword": "Azure12345678"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04.0-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'vm-branch-ne-nic')]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "vm-branch-fr",
+            "location": "francecentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', 'vm-branch-fr-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ls"
+                },
+                "osProfile": {
+                    "computerName": "vmbranchfr",
+                    "adminUsername": "tomas",
+                    "adminPassword": "Azure12345678"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04.0-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'vm-branch-fr-nic')]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "vm-spoke1",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', 'vm-spoke1-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ls"
+                },
+                "osProfile": {
+                    "computerName": "vmspoke1",
+                    "adminUsername": "tomas",
+                    "adminPassword": "Azure12345678"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04.0-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'vm-spoke1-nic')]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "vm-standalone1",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', 'vm-standalone1-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ls"
+                },
+                "osProfile": {
+                    "computerName": "vmstandalone1",
+                    "adminUsername": "tomas",
+                    "adminPassword": "Azure12345678"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04.0-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'vm-standalone1-nic')]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "firewall-ip",
+            "apiVersion": "2018-10-01",
+            "location": "westeurope",
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "sku": {
+                "name": "Standard"
+            }
+        },
+        {
+            "apiVersion": "2018-06-01",
+            "type": "Microsoft.Network/azureFirewalls",
+            "name": "firewall",
+            "location": "westeurope",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', 'firewall-ip')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'we-hub-net', 'AzureFirewallSubnet')]"
+                            },
+                            "privateIPAddress": "10.0.1.100",
+                            "privateIPAllocationMethod": "Static",
+                            "InternalPublicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses/', 'firewall-ip')]"
+                            }
+                        }
+                    }
+                ],
+                "applicationRuleCollections": [
+                    {
+                        "name": "allowMicrosoft",
+                        "properties": {
+                            "priority": 100,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "microsoft",
+                                    "protocols": [
+                                        {
+                                            "port": "80",
+                                            "protocolType": "http"
+                                        },
+                                        {
+                                            "port": "443",
+                                            "protocolType": "https"
+                                        }
+                                    ],
+                                    "targetUrls": [
+                                        "*microsoft.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "allowUbuntu",
+                        "properties": {
+                            "priority": 110,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "ubuntu",
+                                    "protocols": [
+                                        {
+                                            "port": "80",
+                                            "protocolType": "http"
+                                        },
+                                        {
+                                            "port": "443",
+                                            "protocolType": "https"
+                                        }
+                                    ],
+                                    "targetUrls": [
+                                        "*ubuntu.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "allowGithub",
+                        "properties": {
+                            "priority": 120,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "ubuntu",
+                                    "protocols": [
+                                        {
+                                            "port": "80",
+                                            "protocolType": "http"
+                                        },
+                                        {
+                                            "port": "443",
+                                            "protocolType": "https"
+                                        }
+                                    ],
+                                    "targetUrls": [
+                                        "*github.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "networkRuleCollections": [
+                    {
+                        "name": "allowInternalCommunication",
+                        "properties": {
+                            "priority": 200,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "allowWeb",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationPorts": [
+                                        "80"
+                                    ]
+                                },
+                                {
+                                    "name": "allowSsh",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationPorts": [
+                                        "22"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
