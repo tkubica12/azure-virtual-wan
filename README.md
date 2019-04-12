@@ -11,4 +11,4 @@ Architecture:
 * Virtual Machines in branches and networks to test connectivity
 
 ## Diagram
- ![](diagram.png?raw=true)
+ ![](netDiagram.png?raw=true)
