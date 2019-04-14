@@ -1,0 +1,174 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "variables": {
+        "virtualWanName": "virtual-wan"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "firewall-ip",
+            "apiVersion": "2018-10-01",
+            "location": "westeurope",
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "sku": {
+                "name": "Standard"
+            }
+        },
+        {
+            "apiVersion": "2018-06-01",
+            "type": "Microsoft.Network/azureFirewalls",
+            "name": "firewall",
+            "location": "westeurope",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', 'firewall-ip')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'we-hub-net', 'AzureFirewallSubnet')]"
+                            },
+                            "privateIPAddress": "10.0.1.100",
+                            "privateIPAllocationMethod": "Static",
+                            "InternalPublicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses/', 'firewall-ip')]"
+                            }
+                        }
+                    }
+                ],
+                "applicationRuleCollections": [
+                    {
+                        "name": "allowMicrosoft",
+                        "properties": {
+                            "priority": 100,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "microsoft",
+                                    "protocols": [
+                                        {
+                                            "port": "80",
+                                            "protocolType": "http"
+                                        },
+                                        {
+                                            "port": "443",
+                                            "protocolType": "https"
+                                        }
+                                    ],
+                                    "targetUrls": [
+                                        "*microsoft.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "allowUbuntu",
+                        "properties": {
+                            "priority": 110,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "ubuntu",
+                                    "protocols": [
+                                        {
+                                            "port": "80",
+                                            "protocolType": "http"
+                                        },
+                                        {
+                                            "port": "443",
+                                            "protocolType": "https"
+                                        }
+                                    ],
+                                    "targetUrls": [
+                                        "*ubuntu.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "allowGithub",
+                        "properties": {
+                            "priority": 120,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "ubuntu",
+                                    "protocols": [
+                                        {
+                                            "port": "80",
+                                            "protocolType": "http"
+                                        },
+                                        {
+                                            "port": "443",
+                                            "protocolType": "https"
+                                        }
+                                    ],
+                                    "targetUrls": [
+                                        "*github.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "networkRuleCollections": [
+                    {
+                        "name": "allowInternalCommunication",
+                        "properties": {
+                            "priority": 200,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "allowWeb",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationPorts": [
+                                        "80"
+                                    ]
+                                },
+                                {
+                                    "name": "allowSsh",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationAddresses": [
+                                        "10.0.0.0/8"
+                                    ],
+                                    "destinationPorts": [
+                                        "22"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

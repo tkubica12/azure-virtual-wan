@@ -2,7 +2,10 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "ip": {
+        "weip": {
+            "type": "string"
+        },
+        "usip": {
             "type": "string"
         }
     },
@@ -18,11 +21,10 @@
             "properties": {
                 "localNetworkAddressSpace": {
                     "addressPrefixes": [
-                        "10.0.0.0/16",
-                        "10.254.0.0/16"
+                        "10.0.0.0/8"
                     ]
                 },
-                "gatewayIpAddress": "[parameters('ip')]"
+                "gatewayIpAddress": "[parameters('weip')]"
             }
         },
         {
@@ -33,11 +35,24 @@
             "properties": {
                 "localNetworkAddressSpace": {
                     "addressPrefixes": [
-                        "10.0.0.0/16",
-                        "10.254.0.0/16"
+                        "10.0.0.0/8"
                     ]
                 },
-                "gatewayIpAddress": "[parameters('ip')]"
+                "gatewayIpAddress": "[parameters('weip')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-us-us-hub-config",
+            "location": "eastus2",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/8"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip')]"
             }
         },
         {
@@ -74,6 +89,26 @@
                 },
                 "localNetworkGateway2": {
                     "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-we-hub-config')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-us-to-hub",
+            "apiVersion": "2018-12-01",
+            "location": "eastus2",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-us-us-hub-config')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-us-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-us-us-hub-config')]"
                 },
                 "connectionType": "IPsec",
                 "routingWeight": 10,

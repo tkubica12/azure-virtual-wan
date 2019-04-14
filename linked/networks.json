@@ -1,0 +1,387 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "variables": {
+        "virtualWanName": "virtual-wan"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/routeTables",
+            "name": "routes",
+            "apiVersion": "2018-07-01",
+            "location": "westeurope",
+            "properties": {
+                "routes": [
+                    {
+                        "name": "defaultPrivateToNva",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/8",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.0.1.100"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "we-hub-net",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-04-01",
+            "comments": "Deploy hub network",
+            "location": "westeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-hub-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/26"
+                        }
+                    },
+                    {
+                        "name": "AzureFirewallSubnet",
+                        "properties": {
+                            "addressPrefix": "10.0.1.64/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "we-spoke1-net",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-04-01",
+            "dependsOn": [
+                "routes"
+            ],
+            "comments": "Deploy spoke1 network",
+            "location": "westeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.2.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-spoke1-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.2.0/26",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', 'routes')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "we-spoke2-net",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-04-01",
+            "dependsOn": [
+                "routes"
+            ],
+            "comments": "Deploy spoke2 network",
+            "location": "westeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.3.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-spoke2-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.3.0/26",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', 'routes')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "we-standalone1-net",
+            "comments": "Deploy standalone network",
+            "location": "westeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.4.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-standalone1-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.4.0/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "we-standalone2-net",
+            "comments": "Deploy standalone network",
+            "location": "westeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.5.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "we-standalone2-subnet",
+                        "properties": {
+                            "addressPrefix": "10.0.5.0/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "us-standalone-net",
+            "comments": "Deploy standalone network",
+            "location": "eastus2",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.1.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "us-standalone-subnet",
+                        "properties": {
+                            "addressPrefix": "10.1.1.0/26"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "branch-ne-net",
+            "comments": "Deploy branch network",
+            "location": "northeurope",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.0.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "vm-subnet",
+                        "properties": {
+                            "addressPrefix": "10.254.0.0/25"
+                        }
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "10.254.0.128/25"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "branch-fr-net",
+            "comments": "Deploy branch network",
+            "location": "francecentral",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "vm-subnet",
+                        "properties": {
+                            "addressPrefix": "10.254.1.0/25"
+                        }
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "10.254.1.128/25"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2018-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "branch-us-net",
+            "comments": "Deploy branch network",
+            "location": "eastus2",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.2.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "vm-subnet",
+                        "properties": {
+                            "addressPrefix": "10.254.2.0/25"
+                        }
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "10.254.2.128/25"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Spoke1 to Hub",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net"
+            ],
+            "name": "we-spoke1-net/spoke1-to-hub",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-hub-net')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Spoke2 to Hub",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]"
+            ],
+            "name": "we-spoke2-net/spoke2-to-hub",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-hub-net')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Hub to Spoke1",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke2-net', 'spoke2-to-hub')]"
+            ],
+            "name": "we-hub-net/hub-to-spoke1",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke1-net')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Configure peering from Hub to Spoke2",
+            "dependsOn": [
+                "we-hub-net",
+                "we-spoke1-net",
+                "we-spoke2-net",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke1-net', 'spoke1-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-spoke2-net', 'spoke2-to-hub')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', 'we-hub-net', 'hub-to-spoke1')]"
+            ],
+            "name": "we-hub-net/hub-to-spoke2",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke2-net')]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "branch-ne-ip",
+            "location": "northeurope",
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [],
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "apiVersion": "2018-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "branch-fr-ip",
+            "location": "francecentral",
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [],
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "apiVersion": "2018-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "branch-us-ip",
+            "location": "eastus2",
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [],
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        }
+    ]
+}

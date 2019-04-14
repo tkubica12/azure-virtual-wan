@@ -1,0 +1,292 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "variables": {
+        "virtualWanName": "virtual-wan"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-11-01",
+            "name": "[variables('virtualWanName')]",
+            "type": "Microsoft.Network/virtualWans",
+            "location": "westeurope",
+            "properties": {
+                "disableVpnEncryption": false,
+                "allowBranchToBranchTraffic": true,
+                "allowVnetToVnetTraffic": true,
+                "office365LocalBreakoutCategory": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnSites",
+            "apiVersion": "2018-11-01",
+            "name": "branch-ne",
+            "location": "westeurope",
+            "dependsOn": [
+                "[variables('virtualWanName')]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.0.0/24"
+                    ]
+                },
+                "deviceProperties": {
+                    "linkSpeedInMbps": 0
+                },
+                "ipAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'branch-ne-ip'), '2018-10-01').IpAddress]",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "isSecuritySite": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnSites",
+            "apiVersion": "2018-11-01",
+            "name": "branch-fr",
+            "location": "westeurope",
+            "dependsOn": [
+                "[variables('virtualWanName')]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.1.0/24"
+                    ]
+                },
+                "deviceProperties": {
+                    "linkSpeedInMbps": 0
+                },
+                "ipAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'branch-fr-ip'), '2018-10-01').IpAddress]",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "isSecuritySite": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnSites",
+            "apiVersion": "2018-11-01",
+            "name": "branch-us",
+            "location": "westeurope",
+            "dependsOn": [
+                "[variables('virtualWanName')]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.254.2.0/24"
+                    ]
+                },
+                "deviceProperties": {
+                    "linkSpeedInMbps": 0
+                },
+                "ipAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'branch-us-ip'), '2018-10-01').IpAddress]",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "isSecuritySite": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualHubs",
+            "apiVersion": "2018-11-01",
+            "name": "westeurope-hub",
+            "dependsOn": [
+                "[variables('virtualWanName')]"
+            ],
+            "location": "westeurope",
+            "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "routeTable": {
+                    "routes": [
+                        {
+                            "nextHopIpAddress": "10.0.1.100",
+                            "addressPrefixes": [
+                                "10.0.2.0/24",
+                                "10.0.3.0/24"
+                            ]
+                        }
+                    ]
+                },
+                "virtualNetworkConnections": [
+                    {
+                        "name": "westeurope-hub-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-hub-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-spoke1-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke1-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-spoke2-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-spoke2-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-standalone1-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-standalone1-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    },
+                    {
+                        "name": "westeurope-standalone2-to-we-hub-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'we-standalone2-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualHubs",
+            "apiVersion": "2018-11-01",
+            "name": "us-hub",
+            "dependsOn": [
+                "[variables('virtualWanName')]"
+            ],
+            "location": "eastus2",
+            "properties": {
+                "addressPrefix": "10.1.0.0/24",
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('virtualWanName'))]"
+                },
+                "routeTable": {
+                    "routes": [
+                        {
+                            "nextHopIpAddress": "10.0.1.100",
+                            "addressPrefixes": [
+                                "10.0.2.0/24",
+                                "10.0.3.0/24"
+                            ]
+                        }
+                    ]
+                },
+                "virtualNetworkConnections": [
+                    {
+                        "name": "us-hub-to-us-standalone-net",
+                        "properties": {
+                            "remoteVirtualNetwork": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks', 'us-standalone-net')]"
+                            },
+                            "allowHubToRemoteVnetTransit": true,
+                            "allowRemoteVnetToUseHubVnetGateways": true,
+                            "enableInternetSecurity": false
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnGateways",
+            "apiVersion": "2018-11-01",
+            "name": "westeurope-vpn-gw",
+            "location": "westeurope",
+            "dependsOn": [
+                "westeurope-hub",
+                "branch-ne",
+                "branch-fr"
+            ],
+            "properties": {
+                "connections": [
+                    {
+                        "name": "connection-branch-ne",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-ne')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    },
+                    {
+                        "name": "connection-branch-fr",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-fr')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    }
+                ],
+                "virtualHub": {
+                    "id": "[resourceId('Microsoft.Network/virtualHubs', 'westeurope-hub')]"
+                },
+                "bgpSettings": {
+                    "asn": 65515
+                },
+                "vpnGatewayScaleUnit": 1
+            }
+        },
+        {
+            "type": "Microsoft.Network/vpnGateways",
+            "apiVersion": "2018-11-01",
+            "name": "us-vpn-gw",
+            "location": "eastus2",
+            "dependsOn": [
+                "us-hub",
+                "branch-us"
+            ],
+            "properties": {
+                "connections": [
+                    {
+                        "name": "connection-branch-us",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-us')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    }
+                ],
+                "virtualHub": {
+                    "id": "[resourceId('Microsoft.Network/virtualHubs', 'us-hub')]"
+                },
+                "bgpSettings": {
+                    "asn": 65515
+                },
+                "vpnGatewayScaleUnit": 1
+            }
+        }
+    ]
+}
