@@ -2,73 +2,215 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "weip": {
+        "weip0": {
             "type": "string"
         },
-        "usip": {
+        "weip1": {
+            "type": "string"
+        },
+        "usip0": {
+            "type": "string"
+        },
+        "usip1": {
             "type": "string"
         }
     },
-    "variables": {
-        "location": "[resourceGroup().location]"
-    },
+    "variables": {},
     "resources": [
         {
             "type": "Microsoft.Network/localNetworkGateways",
-            "name": "branch-ne-we-hub-config",
+            "name": "branch-ne-we-hub-config0",
             "location": "northeurope",
             "apiVersion": "2018-12-01",
             "properties": {
                 "localNetworkAddressSpace": {
                     "addressPrefixes": [
-                        "10.0.0.0/8"
+                        "10.0.0.0/16",
+                        "10.254.1.0/24"
                     ]
                 },
-                "gatewayIpAddress": "[parameters('weip')]"
+                "gatewayIpAddress": "[parameters('weip0')]"
             }
         },
         {
             "type": "Microsoft.Network/localNetworkGateways",
-            "name": "branch-fr-we-hub-config",
+            "name": "branch-ne-we-hub-config1",
+            "location": "northeurope",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16",
+                        "10.254.1.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('weip1')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-ne-us-hub-config0",
+            "location": "northeurope",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16",
+                        "10.254.2.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip0')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-ne-us-hub-config1",
+            "location": "northeurope",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16",
+                        "10.254.2.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip1')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-fr-we-hub-config0",
             "location": "francecentral",
             "apiVersion": "2018-12-01",
             "properties": {
                 "localNetworkAddressSpace": {
                     "addressPrefixes": [
-                        "10.0.0.0/8"
+                        "10.0.0.0/16",
+                        "10.254.0.0/24"
                     ]
                 },
-                "gatewayIpAddress": "[parameters('weip')]"
+                "gatewayIpAddress": "[parameters('weip0')]"
             }
         },
         {
             "type": "Microsoft.Network/localNetworkGateways",
-            "name": "branch-us-us-hub-config",
+            "name": "branch-fr-we-hub-config1",
+            "location": "francecentral",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16",
+                        "10.254.0.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('weip1')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-fr-us-hub-config0",
+            "location": "francecentral",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16",
+                        "10.254.2.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip0')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-fr-us-hub-config1",
+            "location": "francecentral",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16",
+                        "10.254.2.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip1')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-us-we-hub-config0",
             "location": "eastus2",
             "apiVersion": "2018-12-01",
             "properties": {
                 "localNetworkAddressSpace": {
                     "addressPrefixes": [
-                        "10.0.0.0/8"
+                        "10.0.0.0/16",
+                        "10.254.0.0/24",
+                        "10.254.1.0/24"
                     ]
                 },
-                "gatewayIpAddress": "[parameters('usip')]"
+                "gatewayIpAddress": "[parameters('weip0')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-us-we-hub-config1",
+            "location": "eastus2",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16",
+                        "10.254.0.0/24",
+                        "10.254.1.0/24"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('weip1')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-us-us-hub-config0",
+            "location": "eastus2",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip0')]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/localNetworkGateways",
+            "name": "branch-us-us-hub-config1",
+            "location": "eastus2",
+            "apiVersion": "2018-12-01",
+            "properties": {
+                "localNetworkAddressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16"
+                    ]
+                },
+                "gatewayIpAddress": "[parameters('usip1')]"
             }
         },
         {
             "type": "Microsoft.Network/connections",
-            "name": "branch-ne-to-hub",
+            "name": "branch-ne-to-we-hub0",
             "apiVersion": "2018-12-01",
             "location": "northeurope",
             "dependsOn": [
-                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-ne-we-hub-config')]"
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-ne-we-hub-config0')]"
             ],
             "properties": {
                 "virtualNetworkGateway1": {
                     "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-ne-vpn')]"
                 },
                 "localNetworkGateway2": {
-                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-ne-we-hub-config')]"
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-ne-we-hub-config0')]"
                 },
                 "connectionType": "IPsec",
                 "routingWeight": 10,
@@ -77,18 +219,78 @@
         },
         {
             "type": "Microsoft.Network/connections",
-            "name": "branch-fr-to-hub",
+            "name": "branch-ne-to-we-hub1",
+            "apiVersion": "2018-12-01",
+            "location": "northeurope",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-ne-we-hub-config1')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-ne-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-ne-we-hub-config1')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-ne-to-us-hub0",
+            "apiVersion": "2018-12-01",
+            "location": "northeurope",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-ne-us-hub-config0')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-ne-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-ne-us-hub-config0')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-ne-to-us-hub1",
+            "apiVersion": "2018-12-01",
+            "location": "northeurope",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-ne-us-hub-config1')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-ne-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-ne-us-hub-config1')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-fr-to-we-hub0",
             "apiVersion": "2018-12-01",
             "location": "francecentral",
             "dependsOn": [
-                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-fr-we-hub-config')]"
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-fr-we-hub-config0')]"
             ],
             "properties": {
                 "virtualNetworkGateway1": {
                     "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-fr-vpn')]"
                 },
                 "localNetworkGateway2": {
-                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-we-hub-config')]"
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-we-hub-config0')]"
                 },
                 "connectionType": "IPsec",
                 "routingWeight": 10,
@@ -97,18 +299,138 @@
         },
         {
             "type": "Microsoft.Network/connections",
-            "name": "branch-us-to-hub",
+            "name": "branch-fr-to-we-hub1",
+            "apiVersion": "2018-12-01",
+            "location": "francecentral",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-fr-we-hub-config1')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-fr-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-we-hub-config1')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-fr-to-us-hub0",
+            "apiVersion": "2018-12-01",
+            "location": "francecentral",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-fr-us-hub-config0')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-fr-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-us-hub-config0')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-fr-to-us-hub1",
+            "apiVersion": "2018-12-01",
+            "location": "francecentral",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-fr-us-hub-config1')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-fr-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-fr-us-hub-config1')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-us-to-we-hub0",
             "apiVersion": "2018-12-01",
             "location": "eastus2",
             "dependsOn": [
-                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-us-us-hub-config')]"
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-us-we-hub-config0')]"
             ],
             "properties": {
                 "virtualNetworkGateway1": {
                     "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-us-vpn')]"
                 },
                 "localNetworkGateway2": {
-                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-us-us-hub-config')]"
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-us-we-hub-config0')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-us-to-we-hub1",
+            "apiVersion": "2018-12-01",
+            "location": "eastus2",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-us-we-hub-config1')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-us-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-us-we-hub-config1')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-us-to-us-hub0",
+            "apiVersion": "2018-12-01",
+            "location": "eastus2",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-us-us-hub-config0')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-us-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-us-us-hub-config0')]"
+                },
+                "connectionType": "IPsec",
+                "routingWeight": 10,
+                "sharedKey": "Azure12345678"
+            }
+        },
+        {
+            "type": "Microsoft.Network/connections",
+            "name": "branch-us-to-us-hub1",
+            "apiVersion": "2018-12-01",
+            "location": "eastus2",
+            "dependsOn": [
+                "[concat('Microsoft.Network/localNetworkGateways/', 'branch-us-us-hub-config1')]"
+            ],
+            "properties": {
+                "virtualNetworkGateway1": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', 'branch-us-vpn')]"
+                },
+                "localNetworkGateway2": {
+                    "id": "[resourceId('Microsoft.Network/localNetworkGateways', 'branch-us-us-hub-config1')]"
                 },
                 "connectionType": "IPsec",
                 "routingWeight": 10,

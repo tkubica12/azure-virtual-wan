@@ -12,3 +12,9 @@ Architecture:
 
 ## Diagram
  ![](netDiagram.png?raw=true)
+
+# How to deploy
+Please follow guide in [deploy.sh](deploy.sh)
+
+# TODO
+* Add global peering between US and EU workloads

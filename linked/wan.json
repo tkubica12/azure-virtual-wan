@@ -231,6 +231,17 @@
             "properties": {
                 "connections": [
                     {
+                        "name": "connection-branch-us",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-us')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    },
+                    {
                         "name": "connection-branch-ne",
                         "properties": {
                             "connectionBandwidth": 10,
@@ -280,6 +291,28 @@
                             "enableBgp": false,
                             "remoteVpnSite": {
                                 "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-us')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    },
+                    {
+                        "name": "connection-branch-ne",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-ne')]"
+                            },
+                            "sharedKey": "Azure12345678"
+                        }
+                    },
+                    {
+                        "name": "connection-branch-fr",
+                        "properties": {
+                            "connectionBandwidth": 10,
+                            "enableBgp": false,
+                            "remoteVpnSite": {
+                                "id": "[resourceId('Microsoft.Network/vpnSites', 'branch-fr')]"
                             },
                             "sharedKey": "Azure12345678"
                         }
